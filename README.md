@@ -1,5 +1,6 @@
 # ProjetWebSocket.
 Simple project to work with websocket. The goal was to make a chat, everything needed to be logged and store in the database.
+Took 3 days to make so not really polished but it work.
 
 
 ![alt text](https://github.com/Nlarou/ProjetWebSocket/blob/main/login1.png?raw=true)
