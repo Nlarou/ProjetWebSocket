@@ -1,0 +1,61 @@
+<!doctype html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+
+    <title>Login</title>
+    <meta name="description" content="The HTML5 Herald">
+    <meta name="author" content="Nathaniel Larouche">
+    <script src="js\jquery-3.4.1.min.js"></script>
+    <link rel="stylesheet" href="css/login.css">
+    <link rel="stylesheet" href="css\bootstrap.min.css"></link>
+    <script src="js\bootstrap.min.js"></script>
+  </head>
+
+  <body>
+  <div class="wrapper fadeInDown">
+    <div id="formContent">
+
+              <!-- Icon -->
+              <div class="fadeIn first">
+                  <img src="img\babyYoda-min.png" id="icon" alt="User Icon" />
+                  <h1>Connexion a la classe</h1>
+              </div>
+
+              <!-- Login Form -->
+                <form method="POST" action="/authentification">
+                <input type="text" id="email" class="fadeIn second" name="email" placeholder="email">
+                <input type="password" id="password" class="fadeIn third" name="password" placeholder="password">
+                <input type="submit" class="fadeIn fourth" value="Log In">
+                </form>
+
+              <!-- Remind Passowrd -->
+              <div id="formFooter">
+              <a class="underlineHover" href="#">Un cookie ?</a>
+              </div>
+    </div>
+  </div>
+    <script>
+      getUserInfo();
+    async function getUserInfo(){
+      var user = await fetch("/infoUserConnected", {
+        method: "get",
+        headers: {
+          Accept: "application/json, text/plain, */*",
+          "Content-Type": "application/json"
+        }
+        }).then(res =>res.json());
+        if(user){
+          if(user.type==1){
+            window.location.replace("/portailProfesseur.html");
+          }
+          else{
+            window.location.replace("/portailEleve.html");
+          }
+          
+        }
+      }</script>
+  </body>
+
+</html>

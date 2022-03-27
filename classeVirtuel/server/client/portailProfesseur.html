@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+
+    <title>Portail Professeur</title>
+    <meta name="description" content="The HTML5 Herald" />
+    <meta name="author" content="Nathaniel Larouche" />
+    <link rel="stylesheet" href="css/portailProfesseur.css" />
+    <link rel="stylesheet" href="css/bootstrap.min.css" />
+  </head>
+
+  <body>
+    <nav class="navbar navbar-light bg-light fadeIn first">
+      <a class="navbar-brand">
+          <img class="logo" src="img/babyYoda-min.png" width="120" height="50" alt="">
+          <h2>Cool class chat</h2></img>
+      </a>
+      <div class="navbar-collapse collapse w-100 dual-collapse2 order-2 order-md-2">
+          <ul class="nav navbar-nav navbar-right">
+              <div class="dropdown">
+                  <button class="btn btn-primary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                      Dropdown
+                  </button>
+                  <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                    <button type="button" onclick="return deconnexion()" class="btn btn-secondary">deconnexion</button>
+                  </div>
+              </div>
+          </ul>
+      </div>
+  </nav>
+  <div class="wrapper fadeInDown">
+      <div clas="row">
+        <div class="col-sm-2">
+          <div class="row" id="presence">
+            <div class="title">
+              <strong>Personne en ligne</strong>
+            </div>
+              <div class="connection" id="zone_connection">
+              </div>
+          </div>
+      </div>
+          <div class="col-sm-6">
+              <div class="row" id="chatbox">
+                  <div class="conversation" id="zone_chat">
+                      <div class="mediabox">
+                          <h5 class="username">KoalalaMaster65</h5>
+                          <p class="user-message"><b>math related to science ?</b> </p>
+                      </div>
+                  </div>
+              </div>
+              <div class="row" id="inputbox">
+  
+                  <form action="/" method="post" id="formulaire_chat">
+                      <input type="text" id="message" class="fadeIn second" name="message" placeholder="message">
+                      <input type="submit" class="fadeIn third" value="Send">
+                  </form>
+              </div>
+          </div>
+      </div>
+      <div class="row">
+        <div class="container">
+          
+        </div>
+      </div>
+  </div>
+    <script src="js/jquery-3.4.1.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+  </body>
+
+  <script>
+    // Connexion à socket.io
+    var socket = io.connect(window.location.host);
+    //var listeConnected = new Array();
+    var user;
+    getUserInfo().then(data => user = data);
+    // Quand on reçoit un message, on l'insère dans la page
+    socket.on("nouveau_message", function(data) {
+      insereMessage(data.email,data.message,data.type);
+    });
+
+    // Quand un nouveau client se connecte, on affiche l'information
+    socket.on("nouveau_client", function(user) {
+      $("#zone_chat").append(
+        "<p><em>" +(user.type==1?"[Professeur]":"[Eleve]") +user.email + " a rejoint le Chat !</em></p>"
+      );
+      ajoutBoxConnection(user.email);
+    });
+    
+    socket.on("deconnexion_client", function(user) {
+      $("#zone_chat").append(
+        "<p><em>" +(user.type==1?"[Professeur]":"[Eleve]")+ user.email + " a quitté le Chat !</em></p>"
+      );
+      document.getElementById(user.email).outerHTML = "";
+    });
+
+    $("#formulaire_chat").on("submit", function(e) {
+      e.preventDefault();
+      var message = $("#message").val();
+      if(message != ""){
+      insereMessage(user.email, message,user.type); // Affiche le message aussi sur notre page
+      socket.emit("nouveau_message", message); // Transmet le message aux autres
+      }
+      $("#message")
+        .val("")
+        .focus(); // Vide la zone de Chat et remet le focus dessus
+      return false; // Permet de bloquer l'envoi "classique" du formulaire
+    });
+    //Declare au server que la personne ses deconnecter
+    async function deconnexion() {
+      await fetch("/deconnectUser", {
+        method: "post"
+        }).then(res =>{if(res.status==200){socket.disconnect();window.location.replace("/login.html");}});
+    }
+    //Ajout dans la liste des connecter
+    function ajoutBoxConnection(username){
+      $("#zone_connection").append('<div class="connectionBox fadeIn third" id="'+username+'" ><a href="#" type="button" class="btn btn-lg btn-success" disabled>'+username+'</a></div>');
+    }
+
+    // Ajoute un message dans la page
+    function insereMessage(username, message,type) {
+      if(message.startsWith("http") && (message.endsWith(".png")||message.endsWith(".jpg")||message.endsWith(".gif"))){
+        $("#zone_chat").append('<div class="mediabox"><h5 class="username">' +(type==1?"[Professeur]":"[Eleve]")+
+            username +
+            '</h5><img src="'+message+'" class="chat-image" alt=""></div>');
+      }
+      else if(message ==""){
+        return false;
+      }
+      else{
+        $("#zone_chat").append(
+          '<div class="mediabox"><h5 class="username">' +
+            (type==1?"[Professeur]":"[Eleve]")+
+            username +
+            '</h5><p class="user-message"><b>' +
+            message +
+            "</b></p></div>"
+        );
+      }
+    }
+    //Lorsque la personne quitte la page, on declare au autre qu'il a quitter le chat mais la session est preserver.
+    window.onbeforeunload = function(){
+      socket.emit("deconnexion_client", user);
+      socket.disconnect();
+    };
+
+
+    async function getUserInfo(){
+      
+       var user = await fetch("/infoUserConnected", {
+        method: "get",
+        headers: {
+          Accept: "application/json, text/plain, */*",
+          "Content-Type": "application/json"
+        }
+        }).then(res =>{
+          data = res.json();
+        if(!data)
+        {
+          window.location.replace("/login.html");
+        }
+        return data;
+        });
+          //Si c'est un eleve on l'invite a partir du portail professeur.
+        //if(user.type==2){
+         // window.location.replace("/portailEleve.html");
+       // }
+        //Si y a pas de user connecter on le renvoie au Login.
+        
+
+        var listeUser = await fetch("/getUserConnected", {
+        method: "get",
+        headers: {
+          Accept: "application/json, text/plain, */*",
+          "Content-Type": "application/json"
+        }
+        }).then(res =>res.json());
+
+        for (var i = 0; i < listeUser.length; i++) {
+          if (listeUser[i] != user.email) {
+            ajoutBoxConnection(listeUser[i]);
+        }
+        }
+        //Ajout du nom au menus
+        $("#dropdownMenuButton").html(user.email);
+        
+        //On avertit les autres de la nouvelle personne
+        socket.emit("nouveau_client", user);
+        return user;
+      
+      }
+      
+      
+  </script>
+</html>
